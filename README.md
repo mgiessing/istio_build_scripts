@@ -1,4 +1,4 @@
-# Build istio 1.14.3
+# Build istio 1.3.1
 
 Based on: https://github.com/ppc64le/build-scripts/tree/master/i/istio & enhanced with other versions and LUA support
 
