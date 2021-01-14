@@ -1,0 +1,270 @@
+diff --git a/Makefile b/Makefile
+index b4d7b09..dd8c8dd 100644
+--- a/Makefile
++++ b/Makefile
+@@ -64,6 +64,8 @@ endif
+ LOCAL_ARCH := $(shell uname -m)
+ ifeq ($(LOCAL_ARCH),x86_64)
+ GOARCH_LOCAL := amd64
++else ifeq ($(LOCAL_ARCH),ppc64le)
++GOARCH_LOCAL := ppc64le
+ else ifeq ($(shell echo $(LOCAL_ARCH) | head -c 5),armv8)
+ GOARCH_LOCAL := arm64
+ else ifeq ($(shell echo $(LOCAL_ARCH) | head -c 4),armv)
+@@ -135,7 +137,7 @@ export ISTIO_BIN=$(GO_TOP)/bin
+ # Using same package structure as pkg/
+ export OUT_DIR=$(GO_TOP)/out
+ export ISTIO_OUT:=$(OUT_DIR)/$(GOOS)_$(GOARCH)/$(BUILDTYPE_DIR)
+-export ISTIO_OUT_LINUX:=$(OUT_DIR)/linux_amd64/$(BUILDTYPE_DIR)
++export ISTIO_OUT_LINUX:=$(OUT_DIR)/linux_$(GOARCH_LOCAL)/$(BUILDTYPE_DIR)
+ export HELM=$(ISTIO_OUT)/helm
+ export ARTIFACTS ?= $(ISTIO_OUT)
+ 
+@@ -170,10 +172,10 @@ export ISTIO_ENVOY_LINUX_VERSION ?= ${ISTIO_ENVOY_VERSION}
+ export ISTIO_ENVOY_LINUX_DEBUG_URL ?= ${ISTIO_ENVOY_DEBUG_URL}
+ export ISTIO_ENVOY_LINUX_RELEASE_URL ?= ${ISTIO_ENVOY_RELEASE_URL}
+ # Variables for the extracted debug/release Envoy artifacts.
+-export ISTIO_ENVOY_LINUX_DEBUG_DIR ?= ${OUT_DIR}/linux_amd64/debug
++export ISTIO_ENVOY_LINUX_DEBUG_DIR ?= ${OUT_DIR}/linux_$(GOARCH_LOCAL)/debug
+ export ISTIO_ENVOY_LINUX_DEBUG_NAME ?= envoy-debug-${ISTIO_ENVOY_LINUX_VERSION}
+ export ISTIO_ENVOY_LINUX_DEBUG_PATH ?= ${ISTIO_ENVOY_LINUX_DEBUG_DIR}/${ISTIO_ENVOY_LINUX_DEBUG_NAME}
+-export ISTIO_ENVOY_LINUX_RELEASE_DIR ?= ${OUT_DIR}/linux_amd64/release
++export ISTIO_ENVOY_LINUX_RELEASE_DIR ?= ${OUT_DIR}/linux_$(GOARCH_LOCAL)/release
+ export ISTIO_ENVOY_LINUX_RELEASE_NAME ?= envoy-${ISTIO_ENVOY_VERSION}
+ export ISTIO_ENVOY_LINUX_RELEASE_PATH ?= ${ISTIO_ENVOY_LINUX_RELEASE_DIR}/${ISTIO_ENVOY_LINUX_RELEASE_NAME}
+ 
+@@ -371,7 +373,7 @@ $(1):
+ 
+ ifneq ($(ISTIO_OUT),$(ISTIO_OUT_LINUX))
+ $(ISTIO_OUT_LINUX)/$(1):
+-	STATIC=0 GOOS=linux GOARCH=amd64 LDFLAGS=$(3) bin/gobuild.sh $(ISTIO_OUT_LINUX)/$(1) $(2)
++	STATIC=0 GOOS=linux GOARCH=$(GOARCH_LOCAL) LDFLAGS=$(3) bin/gobuild.sh $(ISTIO_OUT_LINUX)/$(1) $(2)
+ endif
+ 
+ endef
+diff --git a/docker/Dockerfile.kubectl b/docker/Dockerfile.kubectl
+index 14a9446..2c83165 100644
+--- a/docker/Dockerfile.kubectl
++++ b/docker/Dockerfile.kubectl
+@@ -3,10 +3,10 @@
+ ARG BASE_VERSION=latest
+ 
+ # The following section is used as base image if BASE_DISTRIBUTION=default
+-FROM docker.io/istio/base:${BASE_VERSION} as default
++FROM istio/base:1.3.1 as default
+ 
+ # This container should only contain kubectl.  Hard-coding to use Linux K8s 1.13.10 version.
+-ADD https://storage.googleapis.com/kubernetes-release/release/v1.13.10/bin/linux/amd64/kubectl /usr/bin/kubectl
++ADD https://storage.googleapis.com/kubernetes-release/release/v1.13.10/bin/linux/ppc64le/kubectl /usr/bin/kubectl
+ RUN chmod +x /usr/bin/kubectl
+ 
+ # Ensure a kubectl compatible with the container OS was used.  This is a safety
+diff --git a/galley/docker/Dockerfile.galley b/galley/docker/Dockerfile.galley
+index f8bdd47..8d3bf96 100644
+--- a/galley/docker/Dockerfile.galley
++++ b/galley/docker/Dockerfile.galley
+@@ -5,7 +5,7 @@ ARG BASE_DISTRIBUTION=default
+ ARG BASE_VERSION=latest
+ 
+ # The following section is used as base image if BASE_DISTRIBUTION=default
+-FROM docker.io/istio/base:${BASE_VERSION} as default
++FROM istio/base:1.3.1 as default
+ 
+ # The following section is used as base image if BASE_DISTRIBUTION=distroless
+ # hadolint ignore=DL3007
+diff --git a/mixer/docker/Dockerfile.test_policybackend b/mixer/docker/Dockerfile.test_policybackend
+index 1ce268d..d8df644 100644
+--- a/mixer/docker/Dockerfile.test_policybackend
++++ b/mixer/docker/Dockerfile.test_policybackend
+@@ -5,7 +5,7 @@ ARG BASE_DISTRIBUTION=default
+ ARG BASE_VERSION=latest
+ 
+ # The following section is used as base image if BASE_DISTRIBUTION=default
+-FROM docker.io/istio/base:${BASE_VERSION} as default
++FROM istio/base:1.3.1 as default
+ 
+ # The following section is used as base image if BASE_DISTRIBUTION=distroless
+ # hadolint ignore=DL3007
+diff --git a/pilot/docker/Dockerfile.pilot b/pilot/docker/Dockerfile.pilot
+index 6f9f971..68431cb 100644
+--- a/pilot/docker/Dockerfile.pilot
++++ b/pilot/docker/Dockerfile.pilot
+@@ -5,7 +5,8 @@ ARG BASE_DISTRIBUTION=default
+ ARG BASE_VERSION=latest
+ 
+ # The following section is used as base image if BASE_DISTRIBUTION=default
+-FROM docker.io/istio/base:${BASE_VERSION} as default
++#FROM docker.io/istio/base:${BASE_VERSION} as default
++FROM istio/base:1.3.1 as default
+ 
+ # The following section is used as base image if BASE_DISTRIBUTION=distroless
+ # hadolint ignore=DL3007
+diff --git a/pilot/docker/Dockerfile.proxy_debug b/pilot/docker/Dockerfile.proxy_debug
+index ee22f52..051532a 100644
+--- a/pilot/docker/Dockerfile.proxy_debug
++++ b/pilot/docker/Dockerfile.proxy_debug
+@@ -2,7 +2,7 @@
+ ARG BASE_VERSION=latest
+ 
+ # The following section is used as base image if BASE_DISTRIBUTION=default
+-FROM docker.io/istio/base:${BASE_VERSION} as default
++FROM istio/base:1.3.1 as default
+ 
+ ARG proxy_version
+ ARG istio_version
+diff --git a/pilot/docker/Dockerfile.proxy_init b/pilot/docker/Dockerfile.proxy_init
+index 01c4165..7cd1f87 100644
+--- a/pilot/docker/Dockerfile.proxy_init
++++ b/pilot/docker/Dockerfile.proxy_init
+@@ -5,7 +5,7 @@ ARG BASE_DISTRIBUTION=default
+ ARG BASE_VERSION=latest
+ 
+  # The following section is used as base image if BASE_DISTRIBUTION=default
+-FROM docker.io/istio/base:${BASE_VERSION} as default
++FROM istio/base:1.3.1 as default
+ 
+ COPY istio-iptables.sh /usr/local/bin/
+ ENTRYPOINT ["/usr/local/bin/istio-iptables.sh"]
+@@ -16,7 +16,7 @@ FROM gcr.io/distroless/cc:latest as distroless
+ 
+ COPY --from=default /sbin/xtables-multi /sbin/iptables* /sbin/ip6tables* /sbin/ip /sbin/
+ COPY --from=default /lib/xtables/ /lib/xtables
+-COPY --from=default /lib/x86_64-linux-gnu/ /lib/x86_64-linux-gnu
++COPY --from=default /lib/powerpc64le-linux-gnu/ /lib/powerpc64le-linux-gnu
+ COPY --from=default /etc/iproute2 /etc/iproute2
+ 
+ COPY istio-iptables /usr/local/bin/istio-iptables
+diff --git a/pilot/docker/Dockerfile.proxytproxy b/pilot/docker/Dockerfile.proxytproxy
+index e7eef980..357c904 100644
+--- a/pilot/docker/Dockerfile.proxytproxy
++++ b/pilot/docker/Dockerfile.proxytproxy
+@@ -2,7 +2,7 @@
+ ARG BASE_VERSION=latest
+ 
+ # The following section is used as base image if BASE_DISTRIBUTION=default
+-FROM docker.io/istio/base:${BASE_VERSION} as default
++FROM istio/base:1.3.1 as default
+ 
+ ARG proxy_version
+ ARG istio_version
+diff --git a/pilot/docker/Dockerfile.proxyv2 b/pilot/docker/Dockerfile.proxyv2
+index 653449b..87fd31d 100644
+--- a/pilot/docker/Dockerfile.proxyv2
++++ b/pilot/docker/Dockerfile.proxyv2
+@@ -5,7 +5,7 @@ ARG BASE_DISTRIBUTION=default
+ ARG BASE_VERSION=latest
+ 
+ # The following section is used as base image if BASE_DISTRIBUTION=default
+-FROM docker.io/istio/base:${BASE_VERSION} as default
++FROM istio/base:1.3.1 as default
+ 
+ # Add CA certificates for SSL connections.
+ # obtained from debian ca-certs deb using fetch_cacerts.sh
+diff --git a/pilot/docker/Dockerfile.sidecar_injector b/pilot/docker/Dockerfile.sidecar_injector
+index 2a7ba55..dfbcf9c 100644
+--- a/pilot/docker/Dockerfile.sidecar_injector
++++ b/pilot/docker/Dockerfile.sidecar_injector
+@@ -5,7 +5,7 @@ ARG BASE_DISTRIBUTION=default
+ ARG BASE_VERSION=latest
+ 
+ # The following section is used as base image if BASE_DISTRIBUTION=default
+-FROM docker.io/istio/base:${BASE_VERSION} as default
++FROM istio/base:1.3.1 as default
+ 
+ # The following section is used as base image if BASE_DISTRIBUTION=distroless
+ # hadolint ignore=DL3007
+diff --git a/security/docker/Dockerfile.citadel b/security/docker/Dockerfile.citadel
+index 8e50d39..67de5b6 100644
+--- a/security/docker/Dockerfile.citadel
++++ b/security/docker/Dockerfile.citadel
+@@ -5,7 +5,7 @@ ARG BASE_DISTRIBUTION=default
+ ARG BASE_VERSION=latest
+ 
+ # The following section is used as base image if BASE_DISTRIBUTION=default
+-FROM docker.io/istio/base:${BASE_VERSION} as default
++FROM istio/base:1.3.1 as default
+ 
+ # obtained from debian ca-certs deb using fetch_cacerts.sh
+ ADD ca-certificates.tgz /
+diff --git a/security/docker/Dockerfile.citadel-test b/security/docker/Dockerfile.citadel-test
+index dcfb967..a253f13 100644
+--- a/security/docker/Dockerfile.citadel-test
++++ b/security/docker/Dockerfile.citadel-test
+@@ -2,7 +2,7 @@
+ ARG BASE_VERSION=latest
+ 
+ # The following section is used as base image if BASE_DISTRIBUTION=default
+-FROM docker.io/istio/base:${BASE_VERSION} as default
++FROM istio/base:1.3.1 as default
+ 
+ COPY istio_ca /usr/local/bin/istio_ca
+ COPY istio_ca.crt /usr/local/bin/istio_ca.crt
+diff --git a/security/docker/Dockerfile.node-agent b/security/docker/Dockerfile.node-agent
+index 5cbb0ab..0127239 100644
+--- a/security/docker/Dockerfile.node-agent
++++ b/security/docker/Dockerfile.node-agent
+@@ -5,7 +5,7 @@ ARG BASE_DISTRIBUTION=default
+ ARG BASE_VERSION=latest
+ 
+ # The following section is used as base image if BASE_DISTRIBUTION=default
+-FROM docker.io/istio/base:${BASE_VERSION} as default
++FROM istio/base:1.3.1 as default
+ 
+ # The following section is used as base image if BASE_DISTRIBUTION=distroless
+ # hadolint ignore=DL3007
+diff --git a/security/docker/Dockerfile.node-agent-k8s b/security/docker/Dockerfile.node-agent-k8s
+index b462998..efd0c1c 100644
+--- a/security/docker/Dockerfile.node-agent-k8s
++++ b/security/docker/Dockerfile.node-agent-k8s
+@@ -5,7 +5,7 @@ ARG BASE_DISTRIBUTION=default
+ ARG BASE_VERSION=latest
+ 
+ # The following section is used as base image if BASE_DISTRIBUTION=default
+-FROM docker.io/istio/base:${BASE_VERSION} as default
++FROM istio/base:1.3.1 as default
+ 
+ # The following section is used as base image if BASE_DISTRIBUTION=distroless
+ # hadolint ignore=DL3007
+diff --git a/tools/docker-dev/Dockerfile b/tools/docker-dev/Dockerfile
+index dfe56f1..fd64e04 100644
+--- a/tools/docker-dev/Dockerfile
++++ b/tools/docker-dev/Dockerfile
+@@ -39,11 +39,11 @@ COPY --from=docker /usr/local/bin/docker /usr/local/bin/docker
+ RUN echo "sudo chmod o+rw /var/run/docker.sock" >> /home/${user}/.bashrc
+ 
+ # Install Go.
+-RUN curl -s -Lo - https://dl.google.com/go/go${goversion}.linux-amd64.tar.gz | tar -C /usr/local -xzf - \
++RUN curl -s -Lo - https://dl.google.com/go/go${goversion}.linux-ppc64le.tar.gz | tar -C /usr/local -xzf - \
+ && echo "# Go environment." >> /home/${user}/.bashrc \
+ && echo "export GOROOT=/usr/local/go" >> /home/${user}/.bashrc \
+ && echo "export GOPATH=~/go" >> /home/${user}/.bashrc \
+-&& echo "export PATH=\$GOROOT/bin:\$GOPATH/out/linux_amd64/release:\$GOPATH/bin:\$PATH" >> /home/${user}/.bashrc \
++&& echo "export PATH=\$GOROOT/bin:\$GOPATH/out/linux_ppc64le/release:\$GOPATH/bin:\$PATH" >> /home/${user}/.bashrc \
+ && echo "export GO111MODULE=on" >> /home/${user}/.bashrc \
+ && mkdir -p /home/${user}/go
+ 
+diff --git a/tools/istio-docker.mk b/tools/istio-docker.mk
+index 6dd95c8..2e93646 100644
+--- a/tools/istio-docker.mk
++++ b/tools/istio-docker.mk
+@@ -22,7 +22,7 @@
+ docker: build-linux test-bins-linux docker.all
+ 
+ # Add new docker targets to the end of the DOCKER_TARGETS list.
+-DOCKER_TARGETS:=docker.pilot docker.proxy_debug docker.proxytproxy docker.proxyv2 docker.app docker.app_sidecar docker.test_policybackend \
++DOCKER_TARGETS:=docker.base docker.basedebug docker.pilot docker.proxy_debug docker.proxytproxy docker.proxyv2 docker.app docker.app_sidecar docker.test_policybackend \
+ 	docker.proxy_init docker.mixer docker.mixer_codegen docker.citadel docker.galley docker.sidecar_injector docker.kubectl docker.node-agent-k8s
+ 
+ $(ISTIO_DOCKER) $(ISTIO_DOCKER_TAR):
+@@ -277,7 +277,7 @@ docker.base: docker/Dockerfile.base
+ # DOCKER_BUILD_VARIANTS ?=default distroless
+ DOCKER_BUILD_VARIANTS ?=default
+ DEFAULT_DISTRIBUTION=default
+-DOCKER_RULE=$(foreach VARIANT,$(DOCKER_BUILD_VARIANTS), time (mkdir -p $(DOCKER_BUILD_TOP)/$@ && cp -r $^ $(DOCKER_BUILD_TOP)/$@ && cd $(DOCKER_BUILD_TOP)/$@ && $(BUILD_PRE) docker build $(BUILD_ARGS) --build-arg BASE_DISTRIBUTION=$(VARIANT) -t $(HUB)/$(subst docker.,,$@):$(subst -$(DEFAULT_DISTRIBUTION),,$(TAG)-$(VARIANT)) -f Dockerfile$(suffix $@) . ); )
++DOCKER_RULE=$(foreach VARIANT,$(DOCKER_BUILD_VARIANTS), time (mkdir -p $(DOCKER_BUILD_TOP)/$@ && cp -r $^ $(DOCKER_BUILD_TOP)/$@ && cd $(DOCKER_BUILD_TOP)/$@ && $(BUILD_PRE) docker build $(BUILD_ARGS) --build-arg BASE_DISTRIBUTION=$(VARIANT) -t $(HUB)/$(subst docker.,,$@):1.3.1 -f Dockerfile$(suffix $@) . ); )
+
+ # This target will package all docker images used in test and release, without re-building
+ # go binaries. It is intended for CI/CD systems where the build is done in separate job.
+-- 
+1.8.3.1
+

@@ -92,3 +92,7 @@ git cherry-pick f0a038d58fade8d1730e1e108751e10b6502083b
 make -f Makefile BUILD_WITH_CONTAINER=0 USE_LOCAL_PROXY=1 build
 make -f Makefile test
 
+echo "Applying patch for docker build..."
+cp $WORKDIR/patches/istio_istio_1.3.1.patch .
+git apply istio_istio_1.3.1.patch
+make -f Makefile USE_LOCAL_PROXY=1 docker
