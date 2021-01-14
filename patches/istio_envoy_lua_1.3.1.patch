@@ -1,0 +1,69 @@
+diff --git a/bazel/repositories.bzl b/bazel/repositories.bzl
+index 8b53b12..ddf9f5c 100644
+--- bazel/repositories.bzl
++++ bazel/repositories.bzl
+@@ -5,7 +5,7 @@ load(":repository_locations.bzl", "REPOSITORY_LOCATIONS")
+ load("@com_google_googleapis//:repository_rules.bzl", "switched_rules_by_language")
+ 
+ # dict of {build recipe name: longform extension name,}
+-PPC_SKIP_TARGETS = {"luajit": "envoy.filters.http.lua"}
++PPC_SKIP_TARGETS = {}
+ NOBORINGSSL_SKIP_TARGETS = {
+     # The lua filter depends on BoringSSL
+     "lua": "envoy.filters.http.lua",
+@@ -127,7 +127,7 @@ def envoy_dependencies(skip_targets = []):
+     _com_github_circonus_labs_libcircllhist()
+     _com_github_cyan4973_xxhash()
+     _com_github_datadog_dd_opentracing_cpp()
+-    _com_github_eile_tclap()
++    _com_github_mirror_tclap()
+     _com_github_envoyproxy_sqlparser()
+     _com_github_fmtlib_fmt()
+     _com_github_gabime_spdlog()
+@@ -229,14 +229,14 @@ def _com_github_envoyproxy_sqlparser():
+         actual = "@com_github_envoyproxy_sqlparser//:sqlparser",
+     )
+ 
+-def _com_github_eile_tclap():
++def _com_github_mirror_tclap():
+     _repository_impl(
+-        name = "com_github_eile_tclap",
++        name = "com_github_mirror_tclap",
+         build_file = "@envoy//bazel/external:tclap.BUILD",
+     )
+     native.bind(
+         name = "tclap",
+-        actual = "@com_github_eile_tclap//:tclap",
++        actual = "@com_github_mirror_tclap//:tclap",
+     )
+ 
+ def _com_github_fmtlib_fmt():
+diff --git a/bazel/repository_locations.bzl b/bazel/repository_locations.bzl
+index b24d4bd..0519836 100644
+--- bazel/repository_locations.bzl
++++ bazel/repository_locations.bzl
+@@ -60,10 +60,10 @@ REPOSITORY_LOCATIONS = dict(
+         strip_prefix = "sql-parser-5f50c68bdf5f107692bb027d1c568f67597f4d7f",
+         urls = ["https://github.com/envoyproxy/sql-parser/archive/5f50c68bdf5f107692bb027d1c568f67597f4d7f.tar.gz"],
+     ),
+-    com_github_eile_tclap = dict(
++    com_github_mirror_tclap = dict(
+         sha256 = "f0ede0721dddbb5eba3a47385a6e8681b14f155e1129dd39d1a959411935098f",
+         strip_prefix = "tclap-tclap-1-2-1-release-final",
+-        urls = ["https://github.com/eile/tclap/archive/tclap-1-2-1-release-final.tar.gz"],
++        urls = ["https://github.com/mirror/tclap/archive/tclap-1-2-1-release-final.tar.gz"],
+     ),
+     com_github_fmtlib_fmt = dict(
+         sha256 = "4c0741e10183f75d7d6f730b8708a99b329b2f942dad5a9da3385ab92bb4a15c",
+@@ -96,9 +96,9 @@ REPOSITORY_LOCATIONS = dict(
+         urls = ["https://github.com/grpc/grpc/archive/79a8b5289e3122d2cea2da3be7151d37313d6f46.tar.gz"],
+     ),
+     com_github_luajit_luajit = dict(
+-        sha256 = "409f7fe570d3c16558e594421c47bdd130238323c9d6fd6c83dedd2aaeb082a8",
++        sha256 = "3aa88b6ca158eb044fbaf928bd4838e1889626d2fb84f895f499d5746d464ae0",
+         strip_prefix = "LuaJIT-2.1.0-beta3",
+-        urls = ["https://github.com/LuaJIT/LuaJIT/archive/v2.1.0-beta3.tar.gz"],
++        urls = ["https://github.com/mgiessing/LuaJIT/archive/v2.1.0-beta3.tar.gz"],
+     ),
+     com_github_nanopb_nanopb = dict(
+         sha256 = "5fb4dab0b7f6a239908407fe07c9d03877cd0502abb637e38c41091cb9c1d438",

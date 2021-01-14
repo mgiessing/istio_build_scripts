@@ -69,15 +69,15 @@ export PATH=$PATH:`pwd`
 cd $SOURCE_ROOT
 git clone https://github.com/istio/proxy.git
 cd proxy
-git checkout 1.4.3
-cp $WORKDIR/patches/proxy_src_1.4.3.patch .
-git apply proxy_src_1.4.3.patch
+git checkout 1.3.1
+cp $WORKDIR/patches/proxy_src_1.3.1.patch .
+git apply proxy_src_1.3.1.patch
 mkdir patches
 cp $WORKDIR/patches/wee8_genrule_cmd.patch patches/
-cp $WORKDIR/patches/istio_envoy_lua_1.4.3.patch patches/
+cp $WORKDIR/patches/istio_envoy_lua_1.3.1.patch patches/
 touch patches/BUILD
 export BAZEL_BUILD_ARGS="--host_javabase=@local_jdk//:jdk --verbose_failures --copt \"-DENVOY_IGNORE_GLIBCXX_USE_CXX11_ABI_ERROR=1\" --cxxopt=-Wimplicit-fallthrough=0"
-make -f Makefile.core.mk BUILD_WITH_CONTAINER=0 build
+make -f Makefile BUILD_WITH_CONTAINER=0 build
 
 # Clone istio, build and execute unit tests
 mkdir $GOPATH
@@ -87,8 +87,8 @@ mkdir -p $GOPATH/src/istio.io && cd $GOPATH/src/istio.io
 ln -s $SOURCE_ROOT/proxy ./proxy
 git clone https://github.com/istio/istio.git
 cd istio
-git checkout 1.4.3
+git checkout 1.3.1
 git cherry-pick f0a038d58fade8d1730e1e108751e10b6502083b
-make -f Makefile.core.mk BUILD_WITH_CONTAINER=0 USE_LOCAL_PROXY=1 build
-make -f Makefile.core.mk test
+make -f Makefile BUILD_WITH_CONTAINER=0 USE_LOCAL_PROXY=1 build
+make -f Makefile test
 
